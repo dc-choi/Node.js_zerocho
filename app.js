@@ -82,6 +82,21 @@ app.use(session({
 	name: 'sesion-cookie',
 }));
 
+const upload = multer({
+	storage: multer.diskStorage({
+		// 두 함수의 req, file, done은 각각 요청, 파일, 그리고 처리하는 함수다.
+		// done에는 첫번째 인자로 오류를 넣어주고, 두번째로는 실제 경로나 파일이름을 넣어주면 된다.
+		destination(req, file, done){ // 어떤 경로에 파일을 저장할지 지정하는 함수
+			done(null, 'uploads/'); // 해당 폴더가 없다면 오류를 발생시킨다.
+		},
+		filename(req, file, done){ // 어떤 이름으로 파일을 저장할지 자정하는 함수
+			const ext = path.extname(file.originalname);
+			done(null, path.basename(file.originalname, ext) + Date.now() + ext);
+		}
+	}),
+	limit: {fileSize: 5 * 1024 * 1024},
+});
+
 app.use((req, res, next) => {
 	console.log('run every request');
 	next(); // 다음 미들웨어로 넘어가는 함수
@@ -93,6 +108,58 @@ app.get('/', (req, res, next) => {
 	// next();
 }, (req, res) => {
 	throw new Error('Error');
+});
+
+// 파일을 하나의 태그에 하나만 보낼때 예제
+app.post('/upload', upload.single('image'), (req, res) => {
+	console.log(req.file, req.body);
+	res.send('ok');
+});
+
+// 파일을 하나의 태그에 여러개 보낼때 예제
+app.post('/upload', upload.array('images'), (req, res) => {
+	console.log(req.file, req.body);
+	res.send('ok');
+});
+
+// 파일을 여러개의 태그에 하나씩 보낼때 예제
+app.post('/upload',
+	upload.fields([{ name: image1 }, { name: image2 }]),
+	(req, res) => {
+		console.log(req.file, req.body);
+		res.send('ok');
+	},
+);
+
+// 파일을 업로드하지 않고도 멀티파트 형식으로 업로드 하는 경우
+app.post('/upload', upload.none(), (req, res) => {
+	console.log(req.body);
+	res.send('ok');
+});
+
+app.post('/req', (req, res) => {
+	console.log(req.app); // req 객체를 이용해 app 객체에 접근 가능
+	console.log(req.body); // 요청의 본문을 해석한 객체
+	console.log(req.cookies); // 요청의 쿠키를 해석한 객체
+	console.log(req.signedCookies); // 서명된 쿠키들은 여기에 담긴다고 한다.
+	console.log(req.ip); // 요청의 ip 주소가 담겨 있습니다.
+	console.log(req.params); // 라우트 매개변수에 대한 정보가 담긴 객체 (:id 같이 미리 예약된 매개변수)
+	console.log(req.query); // 쿼리스트링에 대한 정보가 담긴 객체입니다. (get으로 받아오는 모든 매개변수)
+	console.log(req.get('~')); // 헤더의 값을 가져오고 싶을때 사용하는 메서드
+});
+
+app.post('/res', (req, res) => {
+	console.log(res.app); // res 객체를 이용해 app 객체에 접근 가능
+	console.log(res.cookie); // 쿠키를 설정하는 메서드
+	console.log(res.clearCookie); // 쿠키를 제거하는 메서드
+	console.log(res.end()); // 데이터없이 응답을 보냅니다.
+	console.log(res.json(JSON)); // JSON 형식의 응답을 보냅니다.
+	console.log(res.redirect('~')); // 리다이렉트할 주소와 함께 응답을 보냄.
+	console.log(res.render('~')); // html이나 템플릿 엔진을 렌더링해서 응답할 때 사용하는 메서드
+	console.log(res.send('~')); // 데이타와 함께 응답을 보냅니다. 데이터는 문자열일 수도 있고, HTML일수도 있으며, 버퍼일 수도 있고, 객체나 배열일 수도 있다.
+	console.log(res.sendFile('~')); // 경로에 위치한 파일을 응답합니다.
+	console.log(res.set('~', '~')); // 응답의 헤더를 설정합니다.
+	console.log(res.status(200)); // 응답 시의 HTTP 상태코드를 지정합니다.
 });
 
 app.use((err, req, res, next) => {
