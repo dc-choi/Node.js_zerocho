@@ -124,7 +124,7 @@ app.post('/upload', upload.array('images'), (req, res) => {
 
 // 파일을 여러개의 태그에 하나씩 보낼때 예제
 app.post('/upload',
-	upload.fields([{ name: image1 }, { name: image2 }]),
+	upload.fields([{ name: 'image1' }, { name: 'image2' }]),
 	(req, res) => {
 		console.log(req.file, req.body);
 		res.send('ok');
